@@ -22,7 +22,16 @@ def parse_events(transcript_path):
 
 
 def detect_dup_reads(events):
-    return []
+    counts = {}
+    for e in events:
+        if e.get("type") != "assistant":
+            continue
+        for c in (e.get("message") or {}).get("content", []) or []:
+            if c.get("type") == "tool_use" and c.get("name") == "Read":
+                path = (c.get("input") or {}).get("file_path")
+                if path:
+                    counts[path] = counts.get(path, 0) + 1
+    return [[p, n] for p, n in counts.items() if n >= 3]
 
 
 def detect_user_corrections(events):

@@ -40,5 +40,16 @@ class TestToolErrors(unittest.TestCase):
         self.assertEqual(count_verify_keywords(evts), 1)
 
 
+class TestDupReads(unittest.TestCase):
+    def test_three_reads_of_same_file_fires(self):
+        result = run_analyzer("transcript-dup-reads.jsonl")
+        self.assertEqual(result.returncode, 0, msg=f"stderr={result.stderr!r}")
+        payload = json.loads(result.stdout)
+        dup = payload["metrics"]["duplicate_reads"]
+        self.assertEqual(len(dup), 1)
+        self.assertEqual(dup[0][0], "/repo/a.py")
+        self.assertEqual(dup[0][1], 3)
+
+
 if __name__ == "__main__":
     unittest.main()
