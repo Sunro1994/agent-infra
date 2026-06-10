@@ -1,0 +1,22 @@
+<!doctype html>
+<html lang="ko"><head><meta charset="utf-8"><title>QA Sandbox</title></head>
+<body>
+  <h1>회원가입</h1>
+  <form id="signup">
+    <label>이메일 <input id="email" type="email" required></label>
+    <label>비밀번호 <input id="pwd" type="password" required minlength="8"></label>
+    <button type="submit">가입</button>
+  </form>
+  <p id="msg"></p>
+  <script>
+    document.getElementById('signup').addEventListener('submit', e => {
+      e.preventDefault();
+      const email = document.getElementById('email').value;
+      const pwd = document.getElementById('pwd').value;
+      const msg = document.getElementById('msg');
+      // 의도된 버그: 비밀번호 8자 미만도 통과시킴 (minlength HTML5 우회)
+      msg.textContent = `OK: ${email}`;
+      msg.style.color = 'green';
+    });
+  </script>
+</body></html>
