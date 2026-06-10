@@ -7,6 +7,9 @@ import re
 import sys
 
 
+_VERIFY_RE = re.compile(r"\b(verified|verifying|verify)\b", re.IGNORECASE)
+
+
 def parse_events(transcript_path):
     events = []
     with open(transcript_path) as f:
@@ -31,11 +34,28 @@ def detect_verify_then_change(events):
 
 
 def count_tool_errors(events):
-    return 0
+    n = 0
+    for e in events:
+        if e.get("type") != "user":
+            continue
+        cont = (e.get("message") or {}).get("content")
+        if not isinstance(cont, list):
+            continue
+        for c in cont:
+            if c.get("type") == "tool_result" and c.get("is_error"):
+                n += 1
+    return n
 
 
 def count_verify_keywords(events):
-    return 0
+    n = 0
+    for e in events:
+        if e.get("type") != "assistant":
+            continue
+        for c in (e.get("message") or {}).get("content", []) or []:
+            if c.get("type") == "text":
+                n += len(_VERIFY_RE.findall(c.get("text", "")))
+    return n
 
 
 def should_fire_draft(metrics, signals):
