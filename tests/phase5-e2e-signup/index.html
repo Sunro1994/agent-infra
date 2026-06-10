@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <title>회원가입</title>
+  <style>
+    body { font-family: sans-serif; max-width: 320px; margin: 2rem auto; }
+    label { display: block; margin: 0.5rem 0; }
+    input { width: 100%; padding: 0.4rem; }
+    button { margin-top: 0.5rem; padding: 0.4rem 1rem; }
+    #msg { margin-top: 1rem; min-height: 1.2em; }
+  </style>
+</head>
+<body>
+  <h1>회원가입</h1>
+  <form id="signup">
+    <label>이메일 <input id="email" type="email" required></label>
+    <label>비밀번호 (8자 이상) <input id="pwd" type="password" required minlength="8"></label>
+    <button type="submit">가입</button>
+  </form>
+  <p id="msg"></p>
+  <script>
+    const form = document.getElementById('signup');
+    const msg = document.getElementById('msg');
+    function showError(text) {
+      msg.textContent = text;
+      msg.style.color = 'red';
+    }
+    form.addEventListener('submit', e => {
+      e.preventDefault();
+      const email = document.getElementById('email').value;
+      const pwd = document.getElementById('pwd').value;
+      // KD-1: 의도된 결함 — '@' 포함 여부만 검사
+      if (!/@/.test(email)) {
+        showError('이메일 형식이 올바르지 않습니다');
+        return;
+      }
+      // KD-3: 의도된 결함 — innerHTML 로 사용자 입력을 렌더. XSS.
+      msg.innerHTML = 'OK: ' + email;
+      msg.style.color = 'green';
+    });
+  </script>
+</body>
+</html>
