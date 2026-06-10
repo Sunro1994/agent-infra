@@ -51,5 +51,28 @@ class TestDupReads(unittest.TestCase):
         self.assertEqual(dup[0][1], 3)
 
 
+class TestUserCorrections(unittest.TestCase):
+    def test_one_correction_signal(self):
+        result = run_analyzer("transcript-corrections.jsonl")
+        self.assertEqual(result.returncode, 0, msg=f"stderr={result.stderr!r}")
+        payload = json.loads(result.stdout)
+        corrections = [s for s in payload["signals"] if s["kind"] == "user_correction"]
+        self.assertEqual(len(corrections), 1)
+        self.assertIn("되돌려", corrections[0]["quote"])
+        self.assertEqual(corrections[0]["preceding_action"], "Edit /repo/foo.sh")
+
+    def test_system_reminder_user_event_ignored(self):
+        result = run_analyzer("transcript-corrections.jsonl")
+        payload = json.loads(result.stdout)
+        # 정확히 1건이어야 함 (system-reminder 포함 user 는 제외)
+        corrections = [s for s in payload["signals"] if s["kind"] == "user_correction"]
+        self.assertEqual(len(corrections), 1)
+
+    def test_tool_result_user_event_ignored(self):
+        from retro_analyzer import detect_user_corrections
+        evts = [{"type":"user","userType":"external","message":{"role":"user","content":[{"type":"tool_result","tool_use_id":"x","content":"아니야 그게 아니야"}]}}]
+        self.assertEqual(detect_user_corrections(evts), [])
+
+
 if __name__ == "__main__":
     unittest.main()

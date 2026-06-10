@@ -9,6 +9,11 @@ import sys
 
 _VERIFY_RE = re.compile(r"\b(verified|verifying|verify)\b", re.IGNORECASE)
 
+_CORRECTION_RE = re.compile(
+    r"(아니야|아니라|그게\s*아니|틀렸|잘못|다시|되돌|revert|undo|stop|wait|not\s+what|wrong|incorrect|미안.*취소)",
+    re.IGNORECASE,
+)
+
 
 def parse_events(transcript_path):
     events = []
@@ -34,8 +39,68 @@ def detect_dup_reads(events):
     return [[p, n] for p, n in counts.items() if n >= 3]
 
 
+def _trim_quote(text, match_start, match_end, limit=120):
+    if len(text) <= limit:
+        return text.strip()
+    half = limit // 2
+    start = max(0, match_start - half)
+    end = min(len(text), match_end + half)
+    snippet = text[start:end].strip()
+    if start > 0:
+        snippet = "…" + snippet
+    if end < len(text):
+        snippet = snippet + "…"
+    return snippet[:limit + 2]
+
+
+def _is_real_user_text(event):
+    if event.get("type") != "user":
+        return False
+    if event.get("userType") not in (None, "external"):
+        return False
+    cont = (event.get("message") or {}).get("content")
+    if not isinstance(cont, str):
+        return False
+    if "<system-reminder>" in cont:
+        return False
+    return True
+
+
+def _summarize_assistant_action(event):
+    if event.get("type") != "assistant":
+        return "(none)"
+    for c in (event.get("message") or {}).get("content", []) or []:
+        if c.get("type") == "tool_use":
+            name = c.get("name", "?")
+            inp = c.get("input") or {}
+            arg = inp.get("file_path") or inp.get("command") or inp.get("pattern") or ""
+            arg = str(arg).splitlines()[0][:60]
+            return f"{name} {arg}".strip()
+    return "(text only)"
+
+
 def detect_user_corrections(events):
-    return []
+    signals = []
+    for idx, e in enumerate(events):
+        if not _is_real_user_text(e):
+            continue
+        text = e["message"]["content"]
+        m = _CORRECTION_RE.search(text)
+        if not m:
+            continue
+        # 직전 assistant event 찾기
+        preceding = "(none)"
+        for j in range(idx - 1, -1, -1):
+            if events[j].get("type") == "assistant":
+                preceding = _summarize_assistant_action(events[j])
+                break
+        signals.append({
+            "kind": "user_correction",
+            "turn_index": idx,
+            "quote": _trim_quote(text, m.start(), m.end()),
+            "preceding_action": preceding,
+        })
+    return signals
 
 
 def detect_verify_then_change(events):

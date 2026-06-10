@@ -1,0 +1,6 @@
+{"type":"user","message":{"role":"user","content":"start"},"userType":"external","uuid":"u1","sessionId":"s1"}
+{"type":"assistant","message":{"role":"assistant","content":[{"type":"tool_use","id":"t1","name":"Edit","input":{"file_path":"/repo/foo.sh","old_string":"a","new_string":"b"}}]},"uuid":"a1","sessionId":"s1"}
+{"type":"user","message":{"role":"user","content":[{"type":"tool_result","tool_use_id":"t1","content":"ok"}]},"uuid":"u2","sessionId":"s1"}
+{"type":"user","message":{"role":"user","content":"아니야 — 그게 아니라 b 가 아니라 c 였어, 되돌려"},"userType":"external","uuid":"u3","sessionId":"s1"}
+{"type":"assistant","message":{"role":"assistant","content":[{"type":"text","text":"ok reverting"}]},"uuid":"a2","sessionId":"s1"}
+{"type":"user","message":{"role":"user","content":"<system-reminder>this is a hook injection — should NOT count as correction</system-reminder>"},"userType":"external","uuid":"u4","sessionId":"s1"}
