@@ -30,11 +30,11 @@ if [ -z "$DRAFTS" ]; then
 fi
 
 COUNT=$(printf "%s\n" "$DRAFTS" | wc -l | tr -d ' ')
-printf "\n📋 [agent-infra] 직전 세션 회고 초안 %s개:\n" "$COUNT" >&2
+printf "\n📋 [agent-infra] 직전 세션 회고 초안 %s개:\n" "$COUNT"
 while IFS= read -r f; do
     [ -z "$f" ] && continue
-    printf "   - %s\n" "$(basename "$f")" >&2
+    printf "   - %s\n" "$(basename "$f")"
 done <<< "$DRAFTS"
-printf "   확정/폐기는 해당 파일을 직접 편집하세요.\n\n" >&2
+printf "   확정/폐기는 해당 파일을 직접 편집하세요.\n\n"
 
 exit 0
