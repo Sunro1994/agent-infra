@@ -74,5 +74,40 @@ class TestUserCorrections(unittest.TestCase):
         self.assertEqual(detect_user_corrections(evts), [])
 
 
+class TestVerifyThenChange(unittest.TestCase):
+    def test_signal_fires(self):
+        result = run_analyzer("transcript-verify-then-change.jsonl")
+        self.assertEqual(result.returncode, 0, msg=f"stderr={result.stderr!r}")
+        payload = json.loads(result.stdout)
+        vtc = [s for s in payload["signals"] if s["kind"] == "verify_then_change"]
+        self.assertEqual(len(vtc), 1)
+        self.assertEqual(vtc[0]["file"], "/repo/x.sh")
+        self.assertIn("Verified", vtc[0]["verify_quote"])
+
+    def test_no_signal_when_change_too_far(self):
+        from retro_analyzer import detect_verify_then_change
+        evts = [
+            {"type":"assistant","message":{"role":"assistant","content":[{"type":"text","text":"verified"}]}},
+            {"type":"user","message":{"role":"user","content":"a"},"userType":"external"},
+            {"type":"user","message":{"role":"user","content":"b"},"userType":"external"},
+            {"type":"user","message":{"role":"user","content":"c"},"userType":"external"},
+            {"type":"user","message":{"role":"user","content":"d"},"userType":"external"},
+            {"type":"user","message":{"role":"user","content":"e"},"userType":"external"},
+            {"type":"user","message":{"role":"user","content":"f"},"userType":"external"},
+            {"type":"assistant","message":{"role":"assistant","content":[{"type":"tool_use","name":"Edit","input":{"file_path":"/x"}}]}},
+        ]
+        # verify_turn=0, change_turn=7 → 7 events apart > 5
+        self.assertEqual(detect_verify_then_change(evts), [])
+
+    def test_no_signal_when_change_is_different_file(self):
+        from retro_analyzer import detect_verify_then_change
+        evts = [
+            {"type":"assistant","message":{"role":"assistant","content":[{"type":"tool_use","name":"Edit","input":{"file_path":"/a"}}]}},
+            {"type":"assistant","message":{"role":"assistant","content":[{"type":"text","text":"verified"}]}},
+            {"type":"assistant","message":{"role":"assistant","content":[{"type":"tool_use","name":"Edit","input":{"file_path":"/b"}}]}},
+        ]
+        self.assertEqual(detect_verify_then_change(evts), [])
+
+
 if __name__ == "__main__":
     unittest.main()

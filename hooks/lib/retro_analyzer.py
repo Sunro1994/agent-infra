@@ -103,8 +103,69 @@ def detect_user_corrections(events):
     return signals
 
 
+_VERIFY_TRIGGER_RE = re.compile(
+    r"\b(verified|passing\s*now|passes\s*now|fixed|complete|works\s*now|confirmed)\b",
+    re.IGNORECASE,
+)
+
+
+def _assistant_text(event):
+    parts = []
+    for c in (event.get("message") or {}).get("content", []) or []:
+        if c.get("type") == "text":
+            parts.append(c.get("text", ""))
+    return "\n".join(parts)
+
+
+def _files_edited_by(event):
+    out = []
+    for c in (event.get("message") or {}).get("content", []) or []:
+        if c.get("type") == "tool_use" and c.get("name") in ("Edit", "Write"):
+            path = (c.get("input") or {}).get("file_path")
+            if path:
+                out.append((path, c.get("name")))
+    return out
+
+
 def detect_verify_then_change(events):
-    return []
+    signals = []
+    seen_pairs = set()
+    for vi, e in enumerate(events):
+        if e.get("type") != "assistant":
+            continue
+        text = _assistant_text(e)
+        m = _VERIFY_TRIGGER_RE.search(text)
+        if not m:
+            continue
+        # 같은 turn 이전에 등장한 파일(verify-스코프) 추출
+        prior_files = set()
+        for j in range(vi):
+            ej = events[j]
+            if ej.get("type") == "assistant":
+                for path, _ in _files_edited_by(ej):
+                    prior_files.add(os.path.realpath(path) if os.path.isabs(path) else path)
+        for ci in range(vi + 1, min(len(events), vi + 6)):
+            ec = events[ci]
+            if ec.get("type") != "assistant":
+                continue
+            for path, name in _files_edited_by(ec):
+                norm = os.path.realpath(path) if os.path.isabs(path) else path
+                if norm not in prior_files:
+                    continue
+                key = (vi, ci, norm)
+                if key in seen_pairs:
+                    continue
+                seen_pairs.add(key)
+                signals.append({
+                    "kind": "verify_then_change",
+                    "file": norm,
+                    "verify_turn": vi,
+                    "change_turn": ci,
+                    "verify_quote": _trim_quote(text, m.start(), m.end()),
+                    "change_quote": f"{name} {path}",
+                })
+                break
+    return signals
 
 
 def count_tool_errors(events):
