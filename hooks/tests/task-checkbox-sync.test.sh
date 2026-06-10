@@ -44,5 +44,48 @@ if grep -q '^\- \[x\] \[T-043\]' "$SANDBOX/docs/tasks/feature.md"; then
     exit 1
 fi
 
-echo "PASS: task-checkbox-sync.sh"
+echo "PASS case 1 (flat repo)"
 rm -rf "$SANDBOX"
+
+# Case 2: nested sub-project — outer git repo without docs/plans, inner subdir with docs/plans (B-004)
+SANDBOX2="/tmp/agent-infra-task-sync-test-nested"
+rm -rf "$SANDBOX2"
+mkdir -p "$SANDBOX2/sub/docs/plans" "$SANDBOX2/sub/docs/tasks" "$SANDBOX2/sub/src"
+cd "$SANDBOX2"
+git init -q  # outer repo. No docs/plans here.
+
+cat > sub/docs/plans/feature.md <<'EOF'
+---
+title: 중첩 테스트
+active_task: T-099
+---
+nested plan
+EOF
+
+cat > sub/docs/tasks/feature.md <<'EOF'
+- [ ] [T-098] before
+- [ ] [T-099] target
+- [ ] [T-100] after
+EOF
+
+INPUT='{"tool_name":"Edit","tool_input":{"file_path":"'$SANDBOX2/sub/src/foo.ts'"}}'
+printf "%s" "$INPUT" | "$HOOK"
+
+if ! grep -q '^\- \[x\] \[T-099\]' "$SANDBOX2/sub/docs/tasks/feature.md"; then
+    echo "FAIL case 2: T-099 not toggled (B-004 regression — nested layout)"
+    cat "$SANDBOX2/sub/docs/tasks/feature.md"
+    exit 1
+fi
+if grep -q '^\- \[x\] \[T-098\]' "$SANDBOX2/sub/docs/tasks/feature.md"; then
+    echo "FAIL case 2: T-098 incorrectly toggled"
+    exit 1
+fi
+if grep -q '^\- \[x\] \[T-100\]' "$SANDBOX2/sub/docs/tasks/feature.md"; then
+    echo "FAIL case 2: T-100 incorrectly toggled"
+    exit 1
+fi
+
+echo "PASS case 2 (nested sub-project)"
+rm -rf "$SANDBOX2"
+
+echo "PASS: task-checkbox-sync.sh (2 cases)"

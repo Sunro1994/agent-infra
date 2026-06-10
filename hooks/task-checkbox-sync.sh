@@ -15,8 +15,18 @@ FILE=$(ai_json_get "$INPUT" '.tool_input.file_path' '')
 if [ "$TOOL" != "Edit" ] && [ "$TOOL" != "Write" ]; then exit 0; fi
 if [ -z "$FILE" ]; then exit 0; fi
 
-# 프로젝트 루트 찾기 (git root, fallback: cwd)
-ROOT=$(cd "$(dirname "$FILE")" 2>/dev/null && git rev-parse --show-toplevel 2>/dev/null || echo "$PWD")
+# 프로젝트 루트 찾기: 파일 디렉토리부터 위로 올라가며 docs/plans/ 가 존재하는 가장 가까운 디렉토리.
+# B-004: git toplevel 만 보면 nested sub-project (tests/<sub>/docs/plans/) 를 못 찾는다.
+DIR=$(cd "$(dirname "$FILE")" 2>/dev/null && pwd)
+ROOT=""
+while [ -n "$DIR" ] && [ "$DIR" != "/" ]; do
+    if [ -d "$DIR/docs/plans" ]; then
+        ROOT="$DIR"
+        break
+    fi
+    DIR=$(dirname "$DIR")
+done
+[ -z "$ROOT" ] && ROOT="$PWD"
 
 # 활성 task ID 찾기: docs/plans/*.md 의 frontmatter active_task
 ACTIVE_TASK=""
