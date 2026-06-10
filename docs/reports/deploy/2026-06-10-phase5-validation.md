@@ -1,8 +1,9 @@
 # Phase 5 Validation
 
-작성일: 2026-06-10
+작성일: 2026-06-10 (초안), 2026-06-11 갱신 (E2E 결과 반영)
 관련 plan: `docs/plans/2026-06-10-agent-infrastructure.md` Phase 5
 관련 spec: `docs/specs/2026-06-10-agent-infrastructure-design.md`
+E2E commit: `5e4e5e0`
 
 ## 검증 결과
 
@@ -12,8 +13,8 @@
 | `deploy-precheck` SKILL.md 구조 검토 | PASS | 검사 카테고리 3종 + 토큰 발급 + 이그노어 패턴 spec 일치 |
 | `deploy-precheck` `precheck.sh` 단위 테스트 | PASS (3 case) | clean staged → 토큰 발급 / `.env` staged → 차단 / 하드코딩 → 차단 |
 | `install.sh` skills/*/ 개별 symlink | PASS | `~/.claude/skills/{integrity-review, deploy-precheck}` 심볼릭 링크 생성 확인 |
-| 통합 E2E (signup 6단계, 9종 산출물) | **PENDING** | Task 5.4 — 새 세션 수동 수행 |
-| 회고 DRAFT → 다음 세션 알림 | **PENDING** | Task 5.4 부속 검증 |
+| 통합 E2E (signup 6단계, 9종 산출물) | **PASS** | Task 5.4 — `tests/phase5-e2e-signup/` 에서 신규 9종 산출물 모두 생성, commit `5e4e5e0` |
+| 회고 DRAFT → 다음 세션 알림 | **PENDING** | Task 5.4 부속 — 다음 세션 시작 시 `session-start-retro-alert.sh` 자동 검증 |
 
 ## 세부
 
@@ -42,6 +43,30 @@
   - `~/.claude/skills/deploy-precheck` → `~/agent-infra/skills/deploy-precheck`
 - 새 백업: `~/.claude/_backups/agent-infra-20260610-221342/`
 
+### Task 5.4 — 통합 E2E (signup 9종 산출물)
+
+작업 디렉토리: `tests/phase5-e2e-signup/`
+실행일: 2026-06-11
+종료 commit: `5e4e5e0 test(phase5-e2e): signup feature 9-artifact E2E run`
+
+| # | 산출물 | 경로 | 비고 |
+|---|---|---|---|
+| 1 | spec | `docs/specs/2026-06-10-signup.md` | `/brainstorming` |
+| 2 | PRD | `docs/prd/signup.md` | 사용자 요청 후 작성 |
+| 3 | plan (frontmatter `active_task: T-001`) | `docs/plans/signup.md` | `/writing-plans` |
+| 4 | tasks 체크박스 | `docs/tasks/signup.md` | **3개 모두 `[ ]`** (B-004 영향) |
+| 5 | 구현 (3 의도된 결함) | `index.html` 44 lines | subagent-driven-development × 3 |
+| 6 | QA 리포트 + 6장 스크린샷 + B-001/B-002/B-003 | `docs/reports/qa/`, `docs/reports/bugs/` | qa-agent + Playwright MCP, 정상 path 3 + KD 재현 3 |
+| 7 | integrity-review 리포트 | `docs/reports/reviews/signup-2026-06-11.md` | verdict=**reject**, critical=true (XSS) — spec §6 운영 결정에 따라 진행 |
+| 8 | deploy-precheck PASS + 토큰 | `.claude/.deploy-token-dc5ebd52d0e9` (mtime 01:22) + `docs/reports/deploy/2026-06-11-staging.md` | secret 0건 |
+| 9 | git commit + deploy-guard 통과 | commit `5e4e5e0`, hook log `[deploy-guard] token valid` | 사용자 명시 승인 후 실행 |
+
+**별건 발견사항**: **B-004 — `task-checkbox-sync.sh` 가 nested project layout 미지원**
+- 위치: `tests/phase5-e2e-signup/docs/reports/bugs/B-004-task-checkbox-sync-nested-project.md`
+- 원인: `hooks/task-checkbox-sync.sh:19` 가 `git rev-parse --show-toplevel` 로 ROOT 를 결정 → sub-project 의 `docs/plans/` 가 아닌 repo root 의 `docs/plans/` 을 검사
+- 영향: tasks 체크박스 자동 토글이 nested layout (e2e-sandbox, phase5-e2e-signup) 에서 모두 실패
+- 처리: Phase 6 또는 별도 hotfix cycle — `task-checkbox-sync.sh` 의 ROOT 결정 로직을 walk-up 방식으로 교체 + `hooks/tests/task-checkbox-sync.test.sh` 에 nested case 추가
+
 ## 사이클 완성도
 
 `deploy-precheck` 가 빌드되어 CLAUDE.md 6조의 사이클이 형식적으로 닫혔다:
@@ -55,5 +80,9 @@
 
 ## 종료 조건
 
-Phase 5 의 verifiable 종료 조건 6개 중 4개 PASS, 2개 PENDING (수동 E2E 영역).
-4개 PASS 기준으로 Task 5.1~5.3 의 빌드는 완료. Task 5.4 / 5.5 추가 검증 후 v0.1.0 태깅 권장.
+Phase 5 verifiable 종료 조건 6개 중 **5개 PASS, 1개 PENDING**.
+
+- PASS: integrity-review 구조 / deploy-precheck 구조 / precheck.sh 단위테스트 / install.sh symlink / **통합 E2E 9종 산출물**
+- PENDING: 회고 DRAFT 알림 (다음 세션 시작 시 자동 검증)
+
+E2E 도중 별건 발견 1건 (B-004) 은 Phase 6 hotfix 로 분리. v0.1.0 태깅 가능 상태.
