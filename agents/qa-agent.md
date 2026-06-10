@@ -1,7 +1,7 @@
 ---
 name: qa-agent
 description: TASK.md 기반으로 웹앱을 실제로 조작하며 시나리오를 수행, 스크린샷과 버그 리포트를 산출. 호출 시 반드시 검토 대상 feature 이름과 URL을 명시할 것.
-tools: Read, Write, mcp__playwright__navigate, mcp__playwright__click, mcp__playwright__fill, mcp__playwright__screenshot, mcp__playwright__wait_for_selector, mcp__playwright__evaluate, mcp__playwright__console_messages
+tools: Read, Write, mcp__playwright__browser_navigate, mcp__playwright__browser_click, mcp__playwright__browser_type, mcp__playwright__browser_fill_form, mcp__playwright__browser_take_screenshot, mcp__playwright__browser_snapshot, mcp__playwright__browser_wait_for, mcp__playwright__browser_evaluate, mcp__playwright__browser_console_messages, mcp__playwright__browser_close
 ---
 
 # QA Agent
@@ -18,10 +18,10 @@ tools: Read, Write, mcp__playwright__navigate, mcp__playwright__click, mcp__play
    - 출력 디렉토리 생성: `docs/reports/qa/<YYYY-MM-DD>-<feature>/screenshots/`
 
 2. **시나리오 실행 (각 [T-NNN] 단위)**
-   - `mcp__playwright__navigate` 로 페이지 진입
-   - 입력/클릭은 `mcp__playwright__fill`, `mcp__playwright__click`
-   - 검증 포인트마다 `mcp__playwright__screenshot` → `<task-id>-<step>.png`
-   - 콘솔 오류는 `mcp__playwright__console_messages` 로 수집
+   - `mcp__playwright__browser_navigate` 로 페이지 진입
+   - 입력은 `mcp__playwright__browser_type` 또는 `mcp__playwright__browser_fill_form`, 클릭은 `mcp__playwright__browser_click`
+   - 검증 포인트마다 `mcp__playwright__browser_take_screenshot` → `<task-id>-<step>.png`
+   - 콘솔 오류는 `mcp__playwright__browser_console_messages` 로 수집
 
 3. **버그 발견 시**
    - `.counters.json` 의 `bug` 카운터를 읽어 `[B-NNN]` 생성
