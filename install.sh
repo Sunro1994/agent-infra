@@ -14,7 +14,7 @@ echo "    backup: $BACKUP_DIR"
 mkdir -p "$BACKUP_DIR"
 cp -r "$CLAUDE_DIR/settings.json" "$BACKUP_DIR/" 2>/dev/null || true
 cp -r "$CLAUDE_DIR/CLAUDE.md" "$BACKUP_DIR/" 2>/dev/null || true
-echo "    [1/4] backed up settings.json + CLAUDE.md"
+echo "    [1/5] backed up settings.json + CLAUDE.md"
 
 # 2. hooks/agents/skills symlink (Phase 2-5에서 실제 파일 추가됨)
 for sub in hooks agents skills; do
@@ -24,7 +24,7 @@ for sub in hooks agents skills; do
     fi
     ln -s "$INFRA_DIR/$sub" "$CLAUDE_DIR/$sub-infra"
 done
-echo "    [2/4] symlinks: $CLAUDE_DIR/{hooks,agents,skills}-infra → $INFRA_DIR/{hooks,agents,skills}"
+echo "    [2/5] symlinks: $CLAUDE_DIR/{hooks,agents,skills}-infra → $INFRA_DIR/{hooks,agents,skills}"
 
 # 3. agents/* 를 ~/.claude/agents/ 에 개별 symlink (Claude Code는 ~/.claude/agents/ 직접 스캔)
 mkdir -p "$CLAUDE_DIR/agents"
@@ -36,10 +36,22 @@ for agent in "$INFRA_DIR/agents/"*.md; do
     fi
     ln -s "$agent" "$CLAUDE_DIR/agents/$NAME"
 done
-echo "    [3/4] linked agents/*.md → $CLAUDE_DIR/agents/"
+echo "    [3/5] linked agents/*.md → $CLAUDE_DIR/agents/"
 
-# 4. CLAUDE.md/settings.json 패치는 sentinel 라인 사이만 교체
+# 4. skills/<name>/ 를 ~/.claude/skills/<name>/ 로 개별 symlink
+mkdir -p "$CLAUDE_DIR/skills"
+for skill in "$INFRA_DIR/skills/"*/; do
+    [ -d "$skill" ] || continue
+    NAME=$(basename "$skill")
+    if [ -L "$CLAUDE_DIR/skills/$NAME" ]; then
+        rm "$CLAUDE_DIR/skills/$NAME"
+    fi
+    ln -s "${skill%/}" "$CLAUDE_DIR/skills/$NAME"
+done
+echo "    [4/5] linked skills/*/ → $CLAUDE_DIR/skills/"
+
+# 5. CLAUDE.md/settings.json 패치는 sentinel 라인 사이만 교체
 # (실제 패치는 Phase 1 Task 1.5 에서 적용)
-echo "    [4/4] CLAUDE.md/settings.json patch — Task 1.5에서 수동 적용"
+echo "    [5/5] CLAUDE.md/settings.json patch — Task 1.5에서 수동 적용"
 
 echo "==> done"
