@@ -1,0 +1,3 @@
+{"type":"user","message":{"role":"user","content":"hello"},"userType":"external","uuid":"u1","sessionId":"s1"}
+{"type":"assistant","message":{"role":"assistant","content":[{"type":"text","text":"hi there"}]},"uuid":"a1","sessionId":"s1"}
+{"type":"user","message":{"role":"user","content":"thanks"},"userType":"external","uuid":"u2","sessionId":"s1"}
