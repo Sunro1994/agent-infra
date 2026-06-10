@@ -1,6 +1,6 @@
 # Phase 5 Validation
 
-작성일: 2026-06-10 (초안), 2026-06-11 갱신 (E2E 결과 반영), 2026-06-11 재갱신 (retro alert surface 진단 + fix)
+작성일: 2026-06-10 (초안), 2026-06-11 갱신 (E2E 결과 반영), 2026-06-11 재갱신 (retro alert surface 진단 + fix), 2026-06-11 마감 (PENDING → PASS, surface 실증)
 관련 plan: `docs/plans/2026-06-10-agent-infrastructure.md` Phase 5
 관련 spec: `docs/specs/2026-06-10-agent-infrastructure-design.md`
 E2E commit: `5e4e5e0`
@@ -14,7 +14,7 @@ E2E commit: `5e4e5e0`
 | `deploy-precheck` `precheck.sh` 단위 테스트 | PASS (3 case) | clean staged → 토큰 발급 / `.env` staged → 차단 / 하드코딩 → 차단 |
 | `install.sh` skills/*/ 개별 symlink | PASS | `~/.claude/skills/{integrity-review, deploy-precheck}` 심볼릭 링크 생성 확인 |
 | 통합 E2E (signup 6단계, 9종 산출물) | **PASS** | Task 5.4 — `tests/phase5-e2e-signup/` 에서 신규 9종 산출물 모두 생성, commit `5e4e5e0` |
-| 회고 DRAFT → 다음 세션 알림 | **PENDING** (재진단 완료, 다음 세션 final verify) | 원인 규명: stderr 출력이 transcript attachment 에만 보존되고 system-reminder 로 surface 안 됨 → `hooks/session-start-retro-alert.sh` 의 `printf >&2` 를 stdout 으로 전환. 새 세션에서 alert 가 system-reminder 로 surface 되면 PASS |
+| 회고 DRAFT → 다음 세션 알림 | **PASS** | stderr → stdout 전환 fix(`c2263ea`) 후 2026-06-11 새 세션 SessionStart 에서 `📋 [agent-infra] 직전 세션 회고 초안 6개` system-reminder 정상 surface 확인 |
 
 ## 세부
 
@@ -80,7 +80,20 @@ E2E commit: `5e4e5e0`
 
 비교: Token Optimizer 와 Superpowers SessionStart hook 둘 다 stdout (plain text or JSON `hookSpecificOutput.additionalContext`) 사용 → system-reminder 로 정상 surface.
 
-**Fix**: `hooks/session-start-retro-alert.sh` 의 `printf "..." >&2` 3 라인을 stdout 으로 전환. Manual 실행으로 stdout 출력 확인 (`exit 0`). 새 세션 시작 시 system-reminder 가 실제로 surface 되면 본 PENDING 항목을 PASS 로 종료한다.
+**Fix**: `hooks/session-start-retro-alert.sh` 의 `printf "..." >&2` 3 라인을 stdout 으로 전환 (commit `c2263ea`). Manual 실행으로 stdout 출력 확인 (`exit 0`).
+
+**Verify (2026-06-11)**: 새 세션 시작 시 다음 system-reminder 가 실제로 surface 됨을 확인 → 본 PENDING 항목을 **PASS** 로 종료.
+
+```
+📋 [agent-infra] 직전 세션 회고 초안 6개:
+   - feedback-retro-20260610-211226-DRAFT.md
+   - feedback-retro-20260610-212707-DRAFT.md
+   - feedback-retro-20260610-213458-DRAFT.md
+   - feedback-retro-20260610-232707-DRAFT.md
+   - feedback-retro-20260611-014240-DRAFT.md
+   - feedback-retro-20260611-015924-DRAFT.md
+   확정/폐기는 해당 파일을 직접 편집하세요.
+```
 
 **별건 (보류)**: 진단 도중, 이번 세션에선 transcript attachment 엔 hook 실행이 기록되었지만 `~/.claude/hooks/.log` 엔 해당 세션의 entry 가 누락되었다. `SessionStart:startup` 환경에서 `$HOME` 또는 ai_log 파일 path 가 달라졌을 가능성. surface 문제와 별개 사이클로 분리.
 
@@ -97,13 +110,12 @@ E2E commit: `5e4e5e0`
 
 ## 종료 조건
 
-Phase 5 verifiable 종료 조건 6개 중 **5개 PASS, 1개 PENDING (재진단 완료)**.
+Phase 5 verifiable 종료 조건 6개 **모두 PASS** (6/6).
 
-- PASS: integrity-review 구조 / deploy-precheck 구조 / precheck.sh 단위테스트 / install.sh symlink / **통합 E2E 9종 산출물**
-- PENDING: 회고 DRAFT 알림 surface — 원인 규명 완료, stderr→stdout fix 적용. 새 세션 시작 시 system-reminder 가 뜨면 PASS.
+- PASS: integrity-review 구조 / deploy-precheck 구조 / precheck.sh 단위테스트 / install.sh symlink / 통합 E2E 9종 산출물 / **회고 DRAFT 알림 surface**
 
 별건 발견:
 - B-004 (task-checkbox-sync nested-project) — hotfix commit `c991d15` 완료
-- ai_log 미기록 (SessionStart:startup 환경) — 별도 사이클로 분리
+- ai_log 미기록 (SessionStart:startup 환경) — 별도 사이클로 분리 (Phase 6 후보)
 
-surface fix 검증 후 v0.1.0 태깅.
+v0.1.0 태그 재배치 (PENDING 해소 반영, 로컬-only 이므로 force 안전).
