@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """retro_analyzer — session transcript 분석 → DRAFT JSON 또는 exit 99."""
 
+import datetime
 import json
 import os
 import re
@@ -8,6 +9,10 @@ import sys
 
 
 _VERIFY_RE = re.compile(r"\b(verified|verifying|verify)\b", re.IGNORECASE)
+
+
+def _now_slug():
+    return datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
 
 _CORRECTION_RE = re.compile(
     r"(아니야|아니라|그게\s*아니|틀렸|잘못|다시|되돌|revert|undo|stop|wait|not\s+what|wrong|incorrect|미안.*취소)",
@@ -217,7 +222,57 @@ def analyze(transcript_path, session_id):
 
 
 def render(payload):
-    raise NotImplementedError("render is implemented in Task 7")
+    session_id = payload["session_id"]
+    metrics = payload["metrics"]
+    signals = payload.get("signals", [])
+    slug = _now_slug()
+
+    lines = []
+    lines.append("---")
+    lines.append(f"name: feedback-retro-{slug}")
+    lines.append('description: "세션 자동 회고 초안 — 사용자 검토 후 확정/폐기"')
+    lines.append("metadata:")
+    lines.append("  type: feedback")
+    lines.append("  status: draft")
+    lines.append(f"  session_id: {session_id}")
+    lines.append(f"  signal_count: {len(signals)}")
+    lines.append("---")
+    lines.append("")
+    lines.append("# 자동 회고 초안")
+    lines.append("")
+    lines.append(f"session: {session_id}")
+    dup = metrics.get("duplicate_reads", [])
+    lines.append(
+        "metrics: duplicate_reads="
+        + repr(dup)
+        + f" tool_errors={metrics.get('tool_errors', 0)}"
+        + f" verify_keywords={metrics.get('verify_keywords', 0)}"
+    )
+    lines.append("")
+
+    corrections = [s for s in signals if s["kind"] == "user_correction"]
+    vtc = [s for s in signals if s["kind"] == "verify_then_change"]
+
+    if corrections:
+        lines.append(f"## 🚨 사용자 정정 ({len(corrections)}건)")
+        for s in corrections:
+            lines.append(f"**turn {s['turn_index']}** — `assistant: {s['preceding_action']}` 직후")
+            lines.append(f"> \"{s['quote']}\"")
+            lines.append("")
+
+    if vtc:
+        lines.append(f"## ⚠️ verify→change ({len(vtc)}건)")
+        for s in vtc:
+            lines.append(f"**turn {s['verify_turn']}→{s['change_turn']}** `{s['file']}`")
+            lines.append(f"- verify: \"{s['verify_quote']}\"")
+            lines.append(f"- change: {s['change_quote']}")
+            lines.append("")
+
+    lines.append("**다음 액션**:")
+    lines.append("- 확정 시: -DRAFT 제거 + 본문을 feedback memory body 구조(rule + **Why:** + **How to apply:**)로 재작성 + MEMORY.md 인덱스 추가")
+    lines.append("- 폐기 시: 파일 삭제")
+    lines.append("")
+    return "\n".join(lines)
 
 
 def main(argv):

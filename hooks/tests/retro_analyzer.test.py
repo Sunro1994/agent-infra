@@ -109,5 +109,45 @@ class TestVerifyThenChange(unittest.TestCase):
         self.assertEqual(detect_verify_then_change(evts), [])
 
 
+class TestRender(unittest.TestCase):
+    def test_render_outputs_frontmatter_and_signal_sections(self):
+        payload = {
+            "session_id": "abc",
+            "metrics": {"duplicate_reads": [["/repo/a.py", 4]], "tool_errors": 1, "verify_keywords": 7},
+            "signals": [
+                {"kind": "user_correction", "turn_index": 3, "quote": "되돌려", "preceding_action": "Edit /repo/foo.sh"},
+                {"kind": "verify_then_change", "file": "/repo/foo.sh", "verify_turn": 5, "change_turn": 7,
+                 "verify_quote": "Verified the fix", "change_quote": "Edit /repo/foo.sh"},
+            ],
+        }
+        proc = subprocess.run(
+            ["python3", ANALYZER, "--render"],
+            input=json.dumps(payload), capture_output=True, text=True,
+        )
+        self.assertEqual(proc.returncode, 0, msg=f"stderr={proc.stderr!r}")
+        out = proc.stdout
+        self.assertIn("name: feedback-retro-", out)
+        self.assertIn("signal_count: 2", out)
+        self.assertIn("session_id: abc", out)
+        self.assertIn("## 🚨 사용자 정정", out)
+        self.assertIn("## ⚠️ verify→change", out)
+        self.assertIn("turn 3", out)
+        self.assertIn("Edit /repo/foo.sh", out)
+
+    def test_render_skips_empty_sections(self):
+        payload = {
+            "session_id": "abc",
+            "metrics": {"duplicate_reads": [], "tool_errors": 5, "verify_keywords": 0},
+            "signals": [],
+        }
+        proc = subprocess.run(
+            ["python3", ANALYZER, "--render"],
+            input=json.dumps(payload), capture_output=True, text=True,
+        )
+        self.assertNotIn("## 🚨", proc.stdout)
+        self.assertNotIn("## ⚠️", proc.stdout)
+        self.assertIn("tool_errors=5", proc.stdout)
+
+
 if __name__ == "__main__":
     unittest.main()
