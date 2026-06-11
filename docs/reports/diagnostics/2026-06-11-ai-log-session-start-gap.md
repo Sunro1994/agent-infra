@@ -33,33 +33,58 @@ mkdir: /.claude: Read-only file system
 
 ### 1. `$HOME` unset → `AI_LOG_FILE` 권한 실패
 
-판정: **YES — 확인됨**
+판정: **YES — 확인됨**. Phase 7 T1 commit `cd8fa48` 로 fix 완료.
 
 `lib/log.sh:5` 에서 `AI_LOG_FILE="${AI_LOG_FILE:-$HOME/.claude/hooks/.log}"` 로 기본값을 설정한다. `$HOME` 이 비어 있으면 `AI_LOG_FILE=/.claude/hooks/.log` 로 해석된다. `no_home` 환경에서 `mkdir: /.claire: Read-only file system` 오류가 실제로 발생했고, ai_log delta=0 으로 엔트리가 하나도 기록되지 않았다. OS 루트 파일시스템 읽기 전용으로 인한 로깅 전면 실패다.
 
 ### 2. `mkdir -p` silent fail + `>>` append silent
 
-판정: **PARTIAL — 조건부 YES**
+판정: **PARTIAL — 조건부 YES**. Phase 7 T1 commit `cd8fa48` 로 fix 완료 (HOME fallback + write retry).
 
 `lib/log.sh:6` 의 `mkdir -p "$(dirname "$AI_LOG_FILE")"` 는 실패 시 중단하지 않는다(`|| return` 없음). `lib/log.sh:12` 의 `printf ... >> "$AI_LOG_FILE"` 도 실패를 반환하지 않는다. harness 에서는 stderr 를 캡처했기 때문에 오류 메시지가 보였지만, 실제 `SessionStart:startup` launcher 가 stderr 를 `/dev/null` 로 리다이렉트하거나 suppression 할 경우 오류 메시지는 완전히 사라지고 로그 누락만 남는다. 즉, **launcher 의 stderr 처리 방식에 따라 이 silent failure 가 진짜 불가시 갭이 된다.**
 
 ### 3. Launcher 가 `AI_LOG_FILE` 을 override
 
-판정: **UNVERIFIED**
+판정: **NO — 관찰 데이터로 기각**
 
-실제 `SessionStart:startup` 프로세스의 환경변수를 캡처하지 않았다. `env > /tmp/ss-env-$$.txt` 를 hook 에 임시 삽입해 실제 SessionStart fire 시 확인해야 한다. Phase 6 harness 범위 밖이다.
+Phase 7 T6 instrument 로 실제 `SessionStart:startup` 환경변수를 캡처 (`$HOME/.claude/hooks/diag/*session-start-retro-alert.env`). 캡처된 4개 세션 모두에서 `AI_LOG_FILE` 변수 자체가 env 에 부재. launcher 가 override 하지 않음이 관찰로 확인됨.
 
 ### 4. stdout/stderr 라우팅 차이로 인한 불가시
 
-판정: **UNVERIFIED**
+판정: **UNVERIFIED — ENV-NOT-OBSERVED**
 
-가설 3 과 동일한 계측이 필요하다. 실제 SessionStart:startup 컨텍스트에서 stdout/stderr 가 어디로 흐르는지 직접 관측하지 않으면 확인 불가다. Phase 6 harness 는 이 경로를 재현하지 않는다.
+env 캡처만으로는 stdout/stderr 의 실제 라우팅을 관측할 수 없다. Phase 7 T6 instrument 의 범위 밖. 직접 검증하려면 `exec >$tmp_out 2>$tmp_err` 류의 별도 trace 가 필요하다. Phase 8 후보로 명시.
 
 ## 추정 root cause
 
 `$HOME` 이 unset 인 환경(또는 `AI_LOG_FILE` 이 명시적으로 지정되지 않은 환경)에서 기본 경로가 `/.claude/hooks/.log` 로 해석되고, OS 루트 파일시스템이 읽기 전용이므로 `mkdir -p` 와 `printf >>` 모두 실패한다. 실패 코드가 전파되지 않고, launcher 가 stderr 를 흡수할 경우 오류 징후도 남지 않는다. **가설 1 + 가설 2 의 조합**이 현재 확인 가능한 root cause 이다.
 
 `SessionStart:startup` launcher 가 `$HOME` 을 정상 설정하는지, `AI_LOG_FILE` 을 override 하는지는 미확인 상태다.
+
+## Phase 7 관찰 결과
+
+- **캡처 세션 수**: 4 (instrument 활성 후 SessionStart fire 4회)
+- **분석 일시**: 2026-06-11
+- **캡처 위치**: `$HOME/.claude/hooks/diag/*session-start-retro-alert.env`
+
+### HOME 변형 분포
+
+| HOME 값 | 세션 수 |
+| --- | --- |
+| `/Users/leeseonro` (정상) | 4 |
+| empty (`HOME=`) | 0 |
+| unset | 0 |
+
+실제 `SessionStart:startup` 환경에서 `HOME` 이 비어 있거나 unset 인 케이스는 관찰되지 않았다. 가설 1·2 는 합성 환경 (`diag_session_start.sh` no_home) 에서만 재현된다.
+
+### T1 fix 의 효과
+
+T1 (`lib/log.sh` HOME fallback + write retry, commit `cd8fa48`) 적용 이후 모든 캡처 세션에서 `ai_log` 정상 기록 확인. T1 은 실제 관찰된 결함이 아니라 합성 환경에서 발견된 잠재 결함에 대한 defensive fix 로 분류된다.
+
+### 부가 관찰
+
+- 최초 캡처 (11:39, ts=1781145556) 에는 `CLAUDE_PROJECT_DIR` 누락, PATH 에 plugin paths (`superpowers`, `token-optimizer`, `understand-anything`) 포함. 이후 세션부터는 `CLAUDE_PROJECT_DIR` 가 설정됨.
+- 한 세션 (11:48, ts=1781146130) 의 `CLAUDE_PROJECT_DIR=/Users/leeseonro` 로, 부모 디렉토리에서 시작된 세션. agent-infra 가 아닌 컨텍스트에서도 동일 hook 이 호출됨을 확인.
 
 ## 후속 사이클 작업 제안
 
