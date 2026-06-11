@@ -76,6 +76,7 @@ def _is_real_user_text(event):
 def _summarize_assistant_action(event):
     if event.get("type") != "assistant":
         return "(none)"
+    text_parts = []
     for c in (event.get("message") or {}).get("content", []) or []:
         if c.get("type") == "tool_use":
             name = c.get("name", "?")
@@ -83,7 +84,15 @@ def _summarize_assistant_action(event):
             arg = inp.get("file_path") or inp.get("command") or inp.get("pattern") or ""
             arg = str(arg).splitlines()[0][:60]
             return f"{name} {arg}".strip()
-    return "(text only)"
+        elif c.get("type") == "text":
+            text_parts.append(c.get("text", ""))
+    if text_parts:
+        joined = " ".join(text_parts).strip()
+        snippet = joined.splitlines()[0][:60] if joined else ""
+        if snippet:
+            return f"(text) {snippet}"
+        return "(text only)"
+    return "(none)"
 
 
 def detect_user_corrections(events):

@@ -1,0 +1,3 @@
+{"type":"user","message":{"role":"user","content":"start"},"userType":"external","uuid":"u1","sessionId":"s1"}
+{"type":"assistant","message":{"role":"assistant","content":[{"type":"text","text":"여기서 검증을 끝낸 것으로 판단했습니다."}]},"uuid":"a1","sessionId":"s1"}
+{"type":"user","message":{"role":"user","content":"아니야 그게 아니라 다시 확인해줘"},"userType":"external","uuid":"u2","sessionId":"s1"}

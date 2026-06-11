@@ -169,5 +169,22 @@ class TestThresholdEnvVar(unittest.TestCase):
         self.assertEqual(proc.returncode, 99, msg=f"stdout={proc.stdout!r}")
 
 
+class TestTextOnlyPreceding(unittest.TestCase):
+    def test_text_only_preceding_includes_snippet(self):
+        result = run_analyzer("transcript-text-preceding.jsonl")
+        self.assertEqual(result.returncode, 0, msg=f"stderr={result.stderr!r}")
+        payload = json.loads(result.stdout)
+        corrections = [s for s in payload["signals"] if s["kind"] == "user_correction"]
+        self.assertEqual(len(corrections), 1)
+        prec = corrections[0]["preceding_action"]
+        self.assertTrue(prec.startswith("(text) "), msg=f"got {prec!r}")
+        self.assertIn("검증을 끝낸", prec)
+
+    def test_empty_text_falls_back_to_text_only(self):
+        from retro_analyzer import _summarize_assistant_action
+        evt = {"type":"assistant","message":{"role":"assistant","content":[{"type":"text","text":""}]}}
+        self.assertEqual(_summarize_assistant_action(evt), "(text only)")
+
+
 if __name__ == "__main__":
     unittest.main()
