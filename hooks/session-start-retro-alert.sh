@@ -6,6 +6,8 @@ export HOOK_NAME="session-start-retro-alert"
 
 INFRA_DIR="$(cd "$(dirname "$0")" && pwd)"
 source "$INFRA_DIR/lib/log.sh"
+source "$INFRA_DIR/lib/log_diag.sh"
+AI_DIAG_ENABLE=1 ai_diag_env
 source "$INFRA_DIR/lib/json.sh"
 
 INPUT=$(cat)
