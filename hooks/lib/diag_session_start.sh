@@ -5,9 +5,10 @@
 set -u
 
 INFRA_DIR="$(cd "$(dirname "$0")/.." && pwd)"
+PROJECT_ROOT="$(cd "$INFRA_DIR/.." && pwd)"
 HOOK="$INFRA_DIR/session-start-retro-alert.sh"
 TMPLOG=$(mktemp)
-SAMPLE_INPUT='{"cwd":"'"$INFRA_DIR"'"}'
+SAMPLE_INPUT='{"cwd":"'"$PROJECT_ROOT"'"}'
 
 run_env() {
     local label="$1"; shift
