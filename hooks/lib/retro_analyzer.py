@@ -7,6 +7,8 @@ import os
 import re
 import sys
 
+_TOOL_ERRORS_THRESHOLD = int(os.environ.get("AI_RETRO_MIN_TOOL_ERRORS", "3"))
+_DUP_READ_THRESHOLD = int(os.environ.get("AI_RETRO_DUP_READ_THRESHOLD", "3"))
 
 _VERIFY_RE = re.compile(r"\b(verified|verifying|verify)\b", re.IGNORECASE)
 
@@ -41,7 +43,7 @@ def detect_dup_reads(events):
                 path = (c.get("input") or {}).get("file_path")
                 if path:
                     counts[path] = counts.get(path, 0) + 1
-    return [[p, n] for p, n in counts.items() if n >= 3]
+    return [[p, n] for p, n in counts.items() if n >= _DUP_READ_THRESHOLD]
 
 
 def _trim_quote(text, match_start, match_end, limit=120):
@@ -202,7 +204,7 @@ def should_fire_draft(metrics, signals):
     return (
         bool(signals)
         or len(metrics["duplicate_reads"]) > 0
-        or metrics["tool_errors"] >= 3
+        or metrics["tool_errors"] >= _TOOL_ERRORS_THRESHOLD
     )
 
 

@@ -149,5 +149,25 @@ class TestRender(unittest.TestCase):
         self.assertIn("tool_errors=5", proc.stdout)
 
 
+class TestThresholdEnvVar(unittest.TestCase):
+    def test_higher_tool_errors_threshold_skips_fire(self):
+        path = os.path.join(FIXTURES, "transcript-tool-errors.jsonl")
+        env = {**os.environ, "AI_RETRO_MIN_TOOL_ERRORS": "5"}
+        proc = subprocess.run(
+            ["python3", ANALYZER, path, "thr-high"],
+            env=env, capture_output=True, text=True,
+        )
+        self.assertEqual(proc.returncode, 99, msg=f"stdout={proc.stdout!r}")
+
+    def test_higher_dup_reads_threshold_skips_fire(self):
+        path = os.path.join(FIXTURES, "transcript-dup-reads.jsonl")
+        env = {**os.environ, "AI_RETRO_DUP_READ_THRESHOLD": "5"}
+        proc = subprocess.run(
+            ["python3", ANALYZER, path, "thr-dup"],
+            env=env, capture_output=True, text=True,
+        )
+        self.assertEqual(proc.returncode, 99, msg=f"stdout={proc.stdout!r}")
+
+
 if __name__ == "__main__":
     unittest.main()
