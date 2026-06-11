@@ -43,7 +43,7 @@
 - Modify: `hooks/lib/log.sh`
 - Create: `hooks/tests/log.test.sh`
 
-- [ ] **Step 1: 실패 테스트 작성**
+- [x] **Step 1: 실패 테스트 작성**
 
 `hooks/tests/log.test.sh`:
 ```bash
@@ -103,7 +103,7 @@ rm -f "$FALLBACK"
 echo "All log.sh tests passed"
 ```
 
-- [ ] **Step 2: 테스트 실행 → 실패 확인**
+- [x] **Step 2: 테스트 실행 → 실패 확인**
 
 ```bash
 chmod +x hooks/tests/log.test.sh
@@ -111,7 +111,7 @@ bash hooks/tests/log.test.sh
 ```
 Expected: FAIL on Test 2 or 3 (현 log.sh 는 HOME='' → `/.claude/hooks/.log` 권한 실패).
 
-- [ ] **Step 3: `lib/log.sh` 교체**
+- [x] **Step 3: `lib/log.sh` 교체**
 
 `hooks/lib/log.sh` 전체 내용:
 ```sh
@@ -144,14 +144,14 @@ ai_warn() {
 }
 ```
 
-- [ ] **Step 4: 테스트 통과**
+- [x] **Step 4: 테스트 통과**
 
 ```bash
 bash hooks/tests/log.test.sh
 ```
 Expected: 4 PASS 라인 + `All log.sh tests passed`.
 
-- [ ] **Step 5: 회귀 확인 (기존 hook 동작)**
+- [x] **Step 5: 회귀 확인 (기존 hook 동작)**
 
 ```bash
 python3 hooks/tests/retro_analyzer.test.py 2>&1 | tail -3
@@ -159,7 +159,7 @@ bash hooks/tests/session-end-retro.test.sh 2>&1 | tail -3
 ```
 Expected: 12 tests OK + 2 PASS 라인.
 
-- [ ] **Step 6: 커밋**
+- [x] **Step 6: 커밋**
 
 ```bash
 git add hooks/lib/log.sh hooks/tests/log.test.sh
@@ -173,7 +173,7 @@ git commit -m "fix(phase7): lib/log.sh HOME fallback + write retry — ai_log ga
 **Files:**
 - Modify: `hooks/lib/diag_session_start.sh`
 
-- [ ] **Step 1: 현재 cwd 동작 확인**
+- [x] **Step 1: 현재 cwd 동작 확인**
 
 ```bash
 bash hooks/lib/diag_session_start.sh 2>&1 | grep -A1 "normal" | head -5
@@ -181,7 +181,7 @@ tail -5 ~/.claude/hooks/.log
 ```
 ai_log entries 가 `cwd=/Users/leeseonro/agent-infra/hooks` (잘못된 cwd) 로 기록되어 있을 것.
 
-- [ ] **Step 2: SAMPLE_INPUT cwd 교체**
+- [x] **Step 2: SAMPLE_INPUT cwd 교체**
 
 `hooks/lib/diag_session_start.sh` 의 상단 변수 블록을 다음과 같이 수정 (해당 4줄만 교체, 나머지 변경 금지):
 
@@ -202,7 +202,7 @@ TMPLOG=$(mktemp)
 SAMPLE_INPUT='{"cwd":"'"$PROJECT_ROOT"'"}'
 ```
 
-- [ ] **Step 3: 수동 검증**
+- [x] **Step 3: 수동 검증**
 
 ```bash
 bash hooks/lib/diag_session_start.sh 2>&1 | tee /tmp/diag-phase7.out
@@ -210,7 +210,7 @@ grep "start cwd" ~/.claude/hooks/.log | tail -3
 ```
 Expected: 마지막 3개 entry 가 `start cwd=/Users/leeseonro/agent-infra` (project root) 이어야 함. 또한 `normal` env 의 ai_log delta 가 양수 (Phase 6 fix 덕분에 `no_home` 도 양수일 가능성).
 
-- [ ] **Step 4: 커밋**
+- [x] **Step 4: 커밋**
 
 ```bash
 git add hooks/lib/diag_session_start.sh
@@ -225,7 +225,7 @@ git commit -m "fix(phase7): diag_session_start cwd → project root"
 - Modify: `hooks/lib/retro_analyzer.py`
 - Modify: `hooks/tests/retro_analyzer.test.py`
 
-- [ ] **Step 1: 실패 테스트 추가**
+- [x] **Step 1: 실패 테스트 추가**
 
 `hooks/tests/retro_analyzer.test.py` 에 추가:
 ```python
@@ -249,14 +249,14 @@ class TestThresholdEnvVar(unittest.TestCase):
         self.assertEqual(proc.returncode, 99, msg=f"stdout={proc.stdout!r}")
 ```
 
-- [ ] **Step 2: 테스트 실행 → 실패**
+- [x] **Step 2: 테스트 실행 → 실패**
 
 ```bash
 python3 hooks/tests/retro_analyzer.test.py 2>&1 | tail -5
 ```
 Expected: `FAILED (failures=2)` (현재 코드는 env 무시).
 
-- [ ] **Step 3: `retro_analyzer.py` 수정**
+- [x] **Step 3: `retro_analyzer.py` 수정**
 
 `hooks/lib/retro_analyzer.py` 의 임포트 블록 직후 (모듈 상수 영역) 다음을 추가:
 ```python
@@ -292,14 +292,14 @@ def should_fire_draft(metrics, signals):
     )
 ```
 
-- [ ] **Step 4: 테스트 통과**
+- [x] **Step 4: 테스트 통과**
 
 ```bash
 python3 hooks/tests/retro_analyzer.test.py 2>&1 | tail -3
 ```
 Expected: `Ran 14 tests in ... OK`.
 
-- [ ] **Step 5: 커밋**
+- [x] **Step 5: 커밋**
 
 ```bash
 git add hooks/lib/retro_analyzer.py hooks/tests/retro_analyzer.test.py
@@ -315,7 +315,7 @@ git commit -m "feat(phase7): retro_analyzer thresholds via env-var override"
 - Modify: `hooks/tests/retro_analyzer.test.py`
 - Create: `hooks/tests/fixtures/transcript-text-preceding.jsonl`
 
-- [ ] **Step 1: fixture 작성**
+- [x] **Step 1: fixture 작성**
 
 `hooks/tests/fixtures/transcript-text-preceding.jsonl` — assistant text-only 직후 user correction:
 ```jsonl
@@ -324,7 +324,7 @@ git commit -m "feat(phase7): retro_analyzer thresholds via env-var override"
 {"type":"user","message":{"role":"user","content":"아니야 그게 아니라 다시 확인해줘"},"userType":"external","uuid":"u2","sessionId":"s1"}
 ```
 
-- [ ] **Step 2: 실패 테스트 추가**
+- [x] **Step 2: 실패 테스트 추가**
 
 `hooks/tests/retro_analyzer.test.py` 에 추가:
 ```python
@@ -345,14 +345,14 @@ class TestTextOnlyPreceding(unittest.TestCase):
         self.assertEqual(_summarize_assistant_action(evt), "(text only)")
 ```
 
-- [ ] **Step 3: 테스트 실행 → 실패**
+- [x] **Step 3: 테스트 실행 → 실패**
 
 ```bash
 python3 hooks/tests/retro_analyzer.test.py 2>&1 | tail -5
 ```
 Expected: `FAILED (failures=1)` (test_text_only_preceding_includes_snippet — 현재 코드는 `(text only)` 반환).
 
-- [ ] **Step 4: `_summarize_assistant_action` 교체**
+- [x] **Step 4: `_summarize_assistant_action` 교체**
 
 기존:
 ```python
@@ -393,14 +393,14 @@ def _summarize_assistant_action(event):
     return "(none)"
 ```
 
-- [ ] **Step 5: 테스트 통과**
+- [x] **Step 5: 테스트 통과**
 
 ```bash
 python3 hooks/tests/retro_analyzer.test.py 2>&1 | tail -3
 ```
 Expected: `Ran 16 tests in ... OK`.
 
-- [ ] **Step 6: 커밋**
+- [x] **Step 6: 커밋**
 
 ```bash
 git add hooks/lib/retro_analyzer.py hooks/tests/retro_analyzer.test.py hooks/tests/fixtures/transcript-text-preceding.jsonl
@@ -414,7 +414,7 @@ git commit -m "feat(phase7): preceding_action text snippet for text-only assista
 **Files:**
 - Create: `docs/conventions/subagent-implementer-guard.md`
 
-- [ ] **Step 1: 디렉토리 생성 + 문서 작성**
+- [x] **Step 1: 디렉토리 생성 + 문서 작성**
 
 ```bash
 mkdir -p docs/conventions
@@ -466,7 +466,7 @@ Subagent 위반 패턴 발견 시:
 - CLAUDE.md 6조 (Deploy 정책) — controller / subagent 공통 적용.
 ```
 
-- [ ] **Step 2: 커밋**
+- [x] **Step 2: 커밋**
 
 ```bash
 git add docs/conventions/subagent-implementer-guard.md
@@ -481,7 +481,7 @@ git commit -m "docs(phase7): subagent implementer-guard convention from T5 incid
 - Create: `hooks/lib/log_diag.sh`
 - Modify: `hooks/session-start-retro-alert.sh`
 
-- [ ] **Step 1: `log_diag.sh` 작성**
+- [x] **Step 1: `log_diag.sh` 작성**
 
 `hooks/lib/log_diag.sh`:
 ```sh
@@ -501,7 +501,7 @@ ai_diag_env() {
 chmod +x hooks/lib/log_diag.sh
 ```
 
-- [ ] **Step 2: `session-start-retro-alert.sh` instrument 추가**
+- [x] **Step 2: `session-start-retro-alert.sh` instrument 추가**
 
 기존 `source "$INFRA_DIR/lib/log.sh"` 라인 바로 다음에 2줄 삽입 (다른 부분 변경 금지):
 
@@ -525,7 +525,7 @@ AI_DIAG_ENABLE=1 ai_diag_env
 source "$INFRA_DIR/lib/json.sh"
 ```
 
-- [ ] **Step 3: 수동 호출로 instrument 동작 확인**
+- [x] **Step 3: 수동 호출로 instrument 동작 확인**
 
 ```bash
 rm -rf "$HOME/.claude/hooks/diag"
@@ -534,7 +534,7 @@ ls "$HOME/.claude/hooks/diag/" 2>&1 | head -3
 ```
 Expected: 1개 `.env` 파일 생성. 파일명 `<ts>-<pid>-session-start-retro-alert.env`.
 
-- [ ] **Step 4: 커밋**
+- [x] **Step 4: 커밋**
 
 ```bash
 git add hooks/lib/log_diag.sh hooks/session-start-retro-alert.sh
@@ -550,14 +550,14 @@ git commit -m "feat(phase7): SessionStart env capture instrument (temporary, rem
 
 **Entry 조건:** T6 land 이후 `$HOME/.claude/hooks/diag/` 안에 `*session-start-retro-alert.env` 파일이 ≥3개 누적.
 
-- [ ] **Step 1: 누적 카운트 확인**
+- [x] **Step 1: 누적 카운트 확인**
 
 ```bash
 ls "$HOME/.claude/hooks/diag/"*session-start-retro-alert.env 2>/dev/null | wc -l
 ```
 3 미만이면 STOP — 사용자가 추가 세션 마칠 때까지 대기. controller 가 다음 세션 시작 시점에 본 task 재진입.
 
-- [ ] **Step 2: 캡처 데이터 분석**
+- [x] **Step 2: 캡처 데이터 분석**
 
 ```bash
 DIAG_DIR="$HOME/.claude/hooks/diag"
@@ -573,7 +573,7 @@ done
 - 가설 4 (stdout/stderr 라우팅 차이): 직접 검증 불가 — env 만으로는 부족. T7 에서는 UNVERIFIED → ENV-NOT-OBSERVED 로 강도 보강.
 - `HOME` 이 비어 있거나 unset 상태인 세션이 있는가? (실제 SessionStart 환경에서 가설 1·2 가 적용되는지 확인)
 
-- [ ] **Step 3: 진단보고서 update**
+- [x] **Step 3: 진단보고서 update**
 
 `docs/reports/diagnostics/2026-06-11-ai-log-session-start-gap.md` 의 "가설 검증" 섹션 update:
 
@@ -591,7 +591,7 @@ done
 - 발견된 HOME 변형 (정상 / empty / unset 분포)
 - T1 fix 의 효과 (HOME='' 케이스도 정상 기록되는지)
 
-- [ ] **Step 4: 커밋**
+- [x] **Step 4: 커밋**
 
 ```bash
 git add docs/reports/diagnostics/2026-06-11-ai-log-session-start-gap.md
@@ -605,7 +605,7 @@ git commit -m "docs(phase7): ai_log gap report — hypothesis 3·4 closed via ob
 **Files:**
 - Modify: `hooks/session-start-retro-alert.sh`
 
-- [ ] **Step 1: instrument 2줄 제거**
+- [x] **Step 1: instrument 2줄 제거**
 
 `hooks/session-start-retro-alert.sh` 에서 T6 에서 추가했던 2줄 제거:
 ```sh
@@ -628,7 +628,7 @@ source "$INFRA_DIR/lib/json.sh"
 
 `hooks/lib/log_diag.sh` 는 유지 (재사용 가능한 도구).
 
-- [ ] **Step 2: 회귀 확인**
+- [x] **Step 2: 회귀 확인**
 
 ```bash
 bash hooks/tests/log.test.sh
@@ -637,7 +637,7 @@ bash hooks/tests/session-end-retro.test.sh
 ```
 Expected: 모든 테스트 통과.
 
-- [ ] **Step 3: 캡처 디렉토리 cleanup (선택)**
+- [x] **Step 3: 캡처 디렉토리 cleanup (선택)**
 
 ```bash
 # 관찰 데이터는 보고서에 반영됐으므로 캡처 파일 폐기 가능
@@ -645,7 +645,7 @@ ls "$HOME/.claude/hooks/diag/" 2>&1 | head -3
 # (사용자 판단으로 rm -rf "$HOME/.claude/hooks/diag" 또는 보존)
 ```
 
-- [ ] **Step 4: 커밋**
+- [x] **Step 4: 커밋**
 
 ```bash
 git add hooks/session-start-retro-alert.sh
@@ -658,13 +658,13 @@ git commit -m "chore(phase7): remove SessionStart env capture instrument — obs
 
 Phase 7 종료 시 모두 PASS:
 
-- [ ] `bash hooks/tests/log.test.sh` 4 케이스 통과
-- [ ] `python3 hooks/tests/retro_analyzer.test.py` 16 tests 통과
-- [ ] `bash hooks/tests/session-end-retro.test.sh` 회귀 없음
-- [ ] HOME unset 수동: `env -i bash -c 'source hooks/lib/log.sh; ai_log "x"'; cat /tmp/.claude/hooks/.log` → "x" 포함
-- [ ] 진단보고서 4개 가설 모두 close (YES/NO/PARTIAL/UNVERIFIED(관찰 데이터 부족)) — UNVERIFIED 사유 명시
-- [ ] `docs/conventions/subagent-implementer-guard.md` 존재
-- [ ] T8 commit 후 `session-start-retro-alert.sh` diff = Phase 6 종료 상태
+- [x] `bash hooks/tests/log.test.sh` 4 케이스 통과
+- [x] `python3 hooks/tests/retro_analyzer.test.py` 16 tests 통과
+- [x] `bash hooks/tests/session-end-retro.test.sh` 회귀 없음
+- [x] HOME unset 수동: `env -i bash -c 'source hooks/lib/log.sh; ai_log "x"'; cat /tmp/.claude/hooks/.log` → "x" 포함
+- [x] 진단보고서 4개 가설 모두 close (YES/NO/PARTIAL/UNVERIFIED(관찰 데이터 부족)) — UNVERIFIED 사유 명시
+- [x] `docs/conventions/subagent-implementer-guard.md` 존재
+- [x] T8 commit 후 `session-start-retro-alert.sh` diff = Phase 6 종료 상태
 
 ## Out of Scope (Phase 8 후보)
 
