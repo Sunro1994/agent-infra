@@ -74,6 +74,33 @@ class TestUserCorrections(unittest.TestCase):
         self.assertEqual(detect_user_corrections(evts), [])
 
 
+class TestFalsePositiveRejection(unittest.TestCase):
+    def test_first_user_paste_with_stop_keyword_not_correction(self):
+        result = run_analyzer("transcript-fp-paste.jsonl")
+        # 신호 없음 → exit 99
+        self.assertEqual(result.returncode, 99, msg=f"stdout={result.stdout!r}")
+
+    def test_task_notification_wrap_not_correction(self):
+        result = run_analyzer("transcript-fp-system-wrap.jsonl")
+        self.assertEqual(result.returncode, 99, msg=f"stdout={result.stdout!r}")
+
+    def test_first_user_task_request_with_dasi_not_correction(self):
+        result = run_analyzer("transcript-fp-first-request.jsonl")
+        self.assertEqual(result.returncode, 99, msg=f"stdout={result.stdout!r}")
+
+    def test_command_wrap_filtered(self):
+        from retro_analyzer import _is_real_user_text
+        evt = {"type":"user","userType":"external",
+               "message":{"role":"user","content":"<command-name>/foo</command-name>"}}
+        self.assertFalse(_is_real_user_text(evt))
+
+    def test_task_notification_wrap_filtered(self):
+        from retro_analyzer import _is_real_user_text
+        evt = {"type":"user","userType":"external",
+               "message":{"role":"user","content":"<task-notification>x</task-notification>"}}
+        self.assertFalse(_is_real_user_text(evt))
+
+
 class TestVerifyThenChange(unittest.TestCase):
     def test_signal_fires(self):
         result = run_analyzer("transcript-verify-then-change.jsonl")

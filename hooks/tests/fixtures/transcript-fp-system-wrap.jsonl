@@ -1,0 +1,5 @@
+{"type":"user","message":{"role":"user","content":"테스트 시작"},"userType":"external","uuid":"u1","sessionId":"s-fp2"}
+{"type":"assistant","message":{"role":"assistant","content":[{"type":"text","text":"백그라운드 시작"}]},"uuid":"a1","sessionId":"s-fp2"}
+{"type":"user","message":{"role":"user","content":"<task-notification>\n<status>completed</status>\n<summary>Background command \"Wait for Scout healthy\" completed (exit code 0)</summary>\n</task-notification>"},"userType":"external","uuid":"u2","sessionId":"s-fp2"}
+{"type":"assistant","message":{"role":"assistant","content":[{"type":"text","text":"확인됨"}]},"uuid":"a2","sessionId":"s-fp2"}
+{"type":"user","message":{"role":"user","content":"<command-name>/status</command-name>\n<command-message>show status</command-message>\n<command-output>모든 정상</command-output>"},"userType":"external","uuid":"u3","sessionId":"s-fp2"}

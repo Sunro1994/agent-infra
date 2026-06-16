@@ -60,6 +60,20 @@ def _trim_quote(text, match_start, match_end, limit=120):
     return snippet[:limit + 2]
 
 
+_SYSTEM_WRAP_MARKERS = (
+    "<system-reminder>",
+    "<task-notification>",
+    "<command-name>",
+    "<command-message>",
+    "<command-output>",
+    "<bash-input>",
+    "<bash-stdout>",
+    "<bash-stderr>",
+    "<local-command-stdout>",
+    "<local-command-stderr>",
+)
+
+
 def _is_real_user_text(event):
     if event.get("type") != "user":
         return False
@@ -68,8 +82,9 @@ def _is_real_user_text(event):
     cont = (event.get("message") or {}).get("content")
     if not isinstance(cont, str):
         return False
-    if "<system-reminder>" in cont:
-        return False
+    for marker in _SYSTEM_WRAP_MARKERS:
+        if marker in cont:
+            return False
     return True
 
 
@@ -104,12 +119,14 @@ def detect_user_corrections(events):
         m = _CORRECTION_RE.search(text)
         if not m:
             continue
-        # 직전 assistant event 찾기
-        preceding = "(none)"
+        # 직전 assistant event 찾기 — 없으면 정정이 아닌 첫 요청으로 간주
+        preceding = None
         for j in range(idx - 1, -1, -1):
             if events[j].get("type") == "assistant":
                 preceding = _summarize_assistant_action(events[j])
                 break
+        if preceding is None:
+            continue
         signals.append({
             "kind": "user_correction",
             "turn_index": idx,

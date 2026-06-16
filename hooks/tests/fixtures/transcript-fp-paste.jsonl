@@ -1,0 +1,2 @@
+{"type":"user","message":{"role":"user","content":"여기 settings.json 보고 검토해줘:\n\n    \"hooks\": {\n      \"UserPromptSubmit\": [...],\n      \"Stop\": [\n        {\"command\": \"./deploy-guard.sh\"}\n      ]\n    }"},"userType":"external","uuid":"u1","sessionId":"s-fp1"}
+{"type":"assistant","message":{"role":"assistant","content":[{"type":"text","text":"이 설정에 대해 알려주세요"}]},"uuid":"a1","sessionId":"s-fp1"}

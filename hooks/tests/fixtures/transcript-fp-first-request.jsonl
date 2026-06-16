@@ -1,0 +1,2 @@
+{"type":"user","message":{"role":"user","content":"내가 이전에 구현한 claude 작업 구조를 다시 도식화로 그려줘"},"userType":"external","uuid":"u1","sessionId":"s-fp3"}
+{"type":"assistant","message":{"role":"assistant","content":[{"type":"text","text":"네, 그리겠습니다"}]},"uuid":"a1","sessionId":"s-fp3"}
