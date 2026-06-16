@@ -2,7 +2,7 @@
 
 작성일: 2026-06-11
 상태: design (구현 대기)
-이전 사이클: Phase 6 (`docs/superpowers/specs/2026-06-11-phase6-auto-retro-signal-and-ailog-gap-design.md`)
+이전 사이클: Phase 6 (`docs/specs/2026-06-11-phase6-auto-retro-signal-and-ailog-gap-design.md`)
 
 ## 1. 배경
 
